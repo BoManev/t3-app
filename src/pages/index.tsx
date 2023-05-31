@@ -58,17 +58,27 @@ const PostView = (props: PostWithUser) => {
   );
 };
 
+const Feed = () => {
+  const { data, isLoading: postsLoading } = api.posts.getAll.useQuery();
+
+  if (postsLoading) return <LoadingPage />;
+  if (!data) return <div>Something Went Wrong!</div>
+  return (
+    <div className="flex flex-col">
+      {[...data, ...data]?.map((fullPost) => (
+        <PostView {...fullPost} key={fullPost.post.id} />
+      ))}
+    </div>
+  );
+};
+
 const Home: NextPage = () => {
-  const {user, isLoaded: userLoaded} = useUser();
+  const { isLoaded: userLoaded, isSignedIn } = useUser();
 
-  const { data, isLoading: postsLoaded } = api.posts.getAll.useQuery();
+  api.posts.getAll.useQuery();
 
-  // Return emptry div, since user tends to load faster
-  if (!userLoaded && !postsLoaded) return <div />
-
-  if (isLoading) return <LoadingPage />;
-
-  if (!data) return <div>Something went wrong!</div>;
+  // Return emptry div if user not loaded
+  if (!userLoaded) return <div />;
 
   return (
     <>
@@ -80,18 +90,15 @@ const Home: NextPage = () => {
       <main className="flex h-screen justify-center bg-black">
         <div className="h-full w-full border-x border-slate-400 md:max-w-2xl">
           <div className="flex border-b border-slate-400 p-4">
-            {!user.isSignedIn && (
+            {!isSignedIn && (
               <SignInButton mode="modal">
                 <button className="btn">Sign in</button>
               </SignInButton>
             )}
-            {user.isSignedIn && <CreatePostWizard />}
+            {isSignedIn && <CreatePostWizard />}
           </div>
-          <div className="flex flex-col">
-            {[...data, ...data]?.map((fullPost) => (
-              <PostView {...fullPost} key={fullPost.post.id} />
-            ))}
-          </div>
+
+          <Feed />
         </div>
       </main>
     </>
